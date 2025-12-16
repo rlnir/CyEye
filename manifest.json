@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "Cy Eye",
+  "version": "1.0.0",
+  "description": "View client and user data from multiple Cymulate environments",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "windows"
+  ],
+  "host_permissions": [
+    "https://eksstgapp.cymulatedev.com/*",
+    "https://eksstgapptenant.cymulatedev.com/*",
+    "https://rfqa-app.cymulatedev.com/*",
+    "https://rfqa-tenant-app.cymulatedev.com/*",
+    "https://app.cymulate.com/*",
+    "https://us.cymulate.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://eksstgapp.cymulatedev.com/*",
+        "https://eksstgapptenant.cymulatedev.com/*",
+        "https://rfqa-app.cymulatedev.com/*",
+        "https://rfqa-tenant-app.cymulatedev.com/*",
+        "https://app.cymulate.com/*",
+        "https://us.cymulate.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup.html",
+        "popup.js",
+        "popup.css"
+      ],
+      "matches": [
+        "https://eksstgapp.cymulatedev.com/*",
+        "https://eksstgapptenant.cymulatedev.com/*",
+        "https://rfqa-app.cymulatedev.com/*",
+        "https://rfqa-tenant-app.cymulatedev.com/*",
+        "https://app.cymulate.com/*",
+        "https://us.cymulate.com/*"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
+
