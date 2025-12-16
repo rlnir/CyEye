@@ -116,7 +116,7 @@
     const header = document.createElement('div');
     header.id = 'cyviewer-window-header';
     header.innerHTML = `
-      <span class="cyviewer-window-title">Cy Eye</span>
+      <span class="cyviewer-window-title">CyEye</span>
       <button class="cyviewer-close-btn" title="Close">×</button>
     `;
     

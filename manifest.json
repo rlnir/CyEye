@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Cy Eye",
+  "name": "CyEye",
   "version": "1.0.0",
   "description": "View client and user data from multiple Cymulate environments",
   "permissions": [
