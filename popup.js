@@ -68,7 +68,8 @@ async function copyToClipboard(text, buttonElement) {
 }
 
 // Create info item with copy button
-function createInfoItem(label, value) {
+function createInfoItem(label, value, options = {}) {
+  const { copyable = true } = options;
   const item = document.createElement('div');
   item.className = 'info-item';
   
@@ -78,22 +79,24 @@ function createInfoItem(label, value) {
   const valueElement = document.createElement('div');
   valueElement.innerHTML = formatValue(value);
   
-  const copyButton = document.createElement('button');
-  copyButton.className = 'copy-btn';
-  copyButton.textContent = '📋';
-  copyButton.title = 'Copy to clipboard';
-  copyButton.setAttribute('aria-label', `Copy ${label} to clipboard`);
-  
-  const valueText = value !== null && value !== undefined ? String(value) : '';
-  copyButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (valueText) {
-      copyToClipboard(valueText, copyButton);
-    }
-  });
-  
   valueContainer.appendChild(valueElement);
-  valueContainer.appendChild(copyButton);
+  if (copyable) {
+    const copyButton = document.createElement('button');
+    copyButton.className = 'copy-btn';
+    copyButton.textContent = '📋';
+    copyButton.title = 'Copy to clipboard';
+    copyButton.setAttribute('aria-label', `Copy ${label} to clipboard`);
+    
+    const valueText = value !== null && value !== undefined ? String(value) : '';
+    copyButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (valueText) {
+        copyToClipboard(valueText, copyButton);
+      }
+    });
+    
+    valueContainer.appendChild(copyButton);
+  }
   
   item.innerHTML = `<div class="info-label">${label}:</div>`;
   item.appendChild(valueContainer);
@@ -346,17 +349,15 @@ function displayToken(tokenData) {
 
   const token = tokenData.data.token;
   const expirationTime = tokenData.data.expirationTimeDisplay || tokenData.data.expirationTime || 'N/A';
-  
-  const tokenFields = [
-    { label: 'Token', value: token },
-    { label: 'Expiration Time', value: expirationTime },
-  ];
 
-  tokenFields.forEach(field => {
-    if (field.value !== undefined && field.value !== null) {
-      tokenInfo.appendChild(createInfoItem(field.label, field.value));
-    }
-  });
+  if (token !== undefined && token !== null) {
+    tokenInfo.appendChild(createInfoItem('Token', token));
+  }
+
+  if (expirationTime !== undefined && expirationTime !== null) {
+    // Intentionally non-copyable (per request)
+    tokenInfo.appendChild(createInfoItem('Expiration Time', expirationTime, { copyable: false }));
+  }
 }
 
 // Display agents
@@ -812,10 +813,39 @@ function displayEnvironments(environmentsData) {
   // Create table body
   const tbody = document.createElement('tbody');
 
+  // Helper: format env timestamp-ish fields for display
+  function formatEnvDateTime(value) {
+    if (value === null || value === undefined || value === '') return 'N/A';
+    try {
+      let d;
+      if (typeof value === 'number') {
+        // Heuristic: seconds vs milliseconds
+        const ms = value < 1e12 ? value * 1000 : value;
+        d = new Date(ms);
+      } else {
+        d = new Date(value);
+      }
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString();
+    } catch (e) {
+      return String(value);
+    }
+  }
+
   environmentsData.environments.forEach((env, index) => {
     const envName = env.name || 'N/A';
     const envId = env._id !== undefined ? String(env._id) : 'N/A';
     const isDefault = envId === '0' || env.name === 'Default Environment';
+    const envLastUpdatedRaw =
+      env.lastUpdated ??
+      env.updatedAt ??
+      env.last_update ??
+      env.modifiedAt ??
+      env.lastModified ??
+      env.updated ??
+      null;
+    const envLastUpdatedDisplay = formatEnvDateTime(envLastUpdatedRaw);
+    const envLastUpdatedCopy = envLastUpdatedRaw !== null && envLastUpdatedRaw !== undefined ? String(envLastUpdatedRaw) : 'N/A';
 
     // Format visibility
     const isVisible = env.visible !== undefined ? env.visible : (env.public !== undefined ? env.public : null);
@@ -922,6 +952,37 @@ function displayEnvironments(environmentsData) {
     
     const detailContent = document.createElement('div');
     detailContent.className = 'environment-detail-content';
+
+    // Environment ID section (always show)
+    const envMetaSection = document.createElement('div');
+    envMetaSection.className = 'environment-detail-section';
+    envMetaSection.innerHTML = `
+      <h4 class="environment-detail-title">Environment Data</h4>
+      <div class="environment-detail-list">
+        <div class="environment-detail-item">
+          <strong>ID:</strong>
+          <span class="detail-meta">${envId}</span>
+          <button class="copy-btn table-copy-btn" title="Copy env id" aria-label="Copy env id" data-copy="${envId}">📋</button>
+        </div>
+        <div class="environment-detail-item">
+          <strong>Last Updated:</strong>
+          <span class="detail-meta">${envLastUpdatedDisplay}</span>
+          <button class="copy-btn table-copy-btn" title="Copy last updated" aria-label="Copy last updated" data-copy="${envLastUpdatedCopy}">📋</button>
+        </div>
+      </div>
+    `;
+    detailContent.appendChild(envMetaSection);
+
+    // Copy handlers (ID + lastUpdated)
+    envMetaSection.querySelectorAll('button[data-copy]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // don't toggle expand/collapse
+        const text = btn.dataset.copy || '';
+        if (text && text !== 'N/A') {
+          copyToClipboard(text, btn);
+        }
+      });
+    });
     
     // Agents section
     if (agentsList.length > 0) {
