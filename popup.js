@@ -1343,4 +1343,3 @@ document.addEventListener('DOMContentLoaded', () => {
   initSettings();
   fetchClientData();
 });
-
